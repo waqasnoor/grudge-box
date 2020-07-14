@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useReducer } from 'react';
 
 import id from 'uuid/v4';
 
@@ -7,22 +7,36 @@ import NewGrudge from './NewGrudge';
 
 import initialState from './initialState';
 
-const Application = () => {
-  const [grudges, setGrudges] = useState(initialState);
+const GRUDGE_ADD = 'GRUDGE_ADD';
+const GRUDGE_FORGIVEN = 'GRUDGE_FORGIVEN';
 
-  const addGrudge = grudge => {
-    grudge.id = id();
-    grudge.forgiven = false;
-    setGrudges([grudge, ...grudges]);
+const grudgeReducer = (state, action) => {
+  if (action.type === GRUDGE_ADD) {
+    return [action.payload, ...state];
+  }
+  if (action.type === GRUDGE_FORGIVEN) {
+    return state.map((grudge) => {
+      if (grudge.id === action.payload.id) {
+        return { ...grudge, forgiven: !grudge.forgiven };
+      }
+      return grudge;
+    });
+  }
+  return state;
+};
+
+const Application = () => {
+  const [grudges, dispatch] = useReducer(grudgeReducer, initialState);
+
+  const addGrudge = ({ person, reason }) => {
+    dispatch({
+      type: GRUDGE_ADD,
+      payload: { person, reason, id: id(), forgiven: false }
+    });
   };
 
-  const toggleForgiveness = id => {
-    setGrudges(
-      grudges.map(grudge => {
-        if (grudge.id !== id) return grudge;
-        return { ...grudge, forgiven: !grudge.forgiven };
-      })
-    );
+  const toggleForgiveness = (id) => {
+    dispatch({ type: GRUDGE_FORGIVEN, payload: { id } });
   };
 
   return (
